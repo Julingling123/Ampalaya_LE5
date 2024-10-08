@@ -20,6 +20,7 @@ import com.google.gson.JsonParser;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -43,20 +44,34 @@ public class WeatherLocationApp {
         WebEngine webEngine = webView.getEngine();
 
         // Load the HTML file into WebView
-        File file = new File("src/main/resources/ampalaya/WeatherMaps.html");
+        File file = new File("/ampalaya/WeatherMaps.html");
         webEngine.load(file.toURI().toString());
 
         // Wait for the page to load before modifying DOM
         webEngine.documentProperty().addListener((obs, oldDoc, newDoc) -> {
             if (newDoc != null) {
-                // Modify temperature and location dynamically using JavaScript
+                String htmlContent = (String) webEngine.executeScript("document.documentElement.outerHTML");
+                System.out.println("Loaded HTML: " + htmlContent);
+            }
+            
+        });
+        webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.FAILED) {
+                    System.out.println("Failed to load the web content.");
+                }
+            });
+            
+        webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.SUCCEEDED) {
+                // Modify DOM elements here
                 String temperature = "24°C";
                 String location = "Manila";
-
                 webEngine.executeScript("document.getElementById('temperature').innerText = '" + temperature + "';");
                 webEngine.executeScript("document.getElementById('location').innerText = '" + location + "';");
             }
         });
+            
+
     }
     
     private void loadSavedLocations() {
@@ -72,7 +87,7 @@ public class WeatherLocationApp {
     private void updateSavedLocationsUI() {
         Object listViewSavedLocations;
         // Assuming you have a ListView to display the saved locations
-        listViewSavedLocations.setItems(savedLocations);
+        // listViewSavedLocations.setItems(savedLocations);
     }
 
 
@@ -89,22 +104,17 @@ public class WeatherLocationApp {
                 return getWeatherdata(result);
             }
 
-            @Override
+            @@Override
             protected void succeeded() {
-                // This method is called on the JavaFX Application Thread
-                JsonObject outcome = new JsonObject();
+                JsonObject outcome;
                 try {
                     outcome = get();
-                } catch (InterruptedException e) {
-                    System.out.println(e);
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    System.out.println(e);
+                    Platform.runLater(() -> updateWeatherUI(outcome)); // Ensure UI updates on JavaFX thread
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
-                // You can now update your UI with the weather data
-                updateWeatherUI(outcome);
             }
+            
 
             @Override
             protected void failed() {
