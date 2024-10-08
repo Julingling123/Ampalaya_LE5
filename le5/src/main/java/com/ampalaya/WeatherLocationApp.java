@@ -17,6 +17,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -60,7 +61,7 @@ public class WeatherLocationApp {
                     System.out.println("Failed to load the web content.");
                 }
             });
-            
+
         webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
                 // Modify DOM elements here
@@ -104,7 +105,7 @@ public class WeatherLocationApp {
                 return getWeatherdata(result);
             }
 
-            @@Override
+            @Override
             protected void succeeded() {
                 JsonObject outcome;
                 try {
